@@ -5,10 +5,10 @@ readme = 'README.md'
 description = "A simple tool to serve command line tools as web services."
 authors = ["Gongziting Tech Ltd."]
 license = "MIT"
-homepage = "https://github.com/gzttech/servecmd
+homepage = "https://github.com/gzttech/servecmd"
 
 [tool.poetry.scripts]
-servecmd = 'beautifulspoon.cli:main'
+servecmd = 'servecmd.__main__:main'
 
 [tool.poetry.dependencies]
 python = "^3.10.0"
