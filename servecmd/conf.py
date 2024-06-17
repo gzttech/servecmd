@@ -1,9 +1,10 @@
 import json
+import os
 import logging
 import yaml
 
 CONFIG = {
-
+    'default_workdir': f'{os.getcwd()}/servecmd_default',
 }
 
 CONFIG_SEARCH_LOCATIONS = [

@@ -7,7 +7,9 @@ import glob
 import shlex
 import shutil
 import uuid
+import time
 import yaml
+from . import conf
 from . import cmd_manager
 from . import util
 
@@ -56,8 +58,8 @@ class CmdSession:
             self.job_id = None
 
     def get_job_path(self):
-        cwd = self.cmd_config.get("cwd", "").rstrip("/")
-        return f'{cwd}/{self.job_id}'
+        cwd = self.cmd_config.get("cwd", "") or conf.CONFIG.get('default_workdir')
+        return f'{cwd.rstrip("/")}/{self.job_id}'
     
     def get_job_file_path(self, filename):
         return f'{self.get_job_path()}/{filename}'
@@ -135,12 +137,20 @@ class CmdSession:
         ret = {}
         proc_kwargs = {}
         proc_kwargs['cwd'] = self.get_job_path()
+        begin_time = time.time()
         process = await asyncio.create_subprocess_shell(cmd,
                                                         stdout=asyncio.subprocess.PIPE,
                                                         stderr=asyncio.subprocess.PIPE,
                                                         **proc_kwargs
                                                         )
         (stdout, stderr) = await process.communicate()
+        end_time = time.time()
+        util.json_log_info({
+            'job_id': self.job_id,
+            'returncode': process.returncode,
+            'used_time': end_time - begin_time,
+            'stderr': stderr.decode('utf-8'),
+        })
         for item in self.cmd_config.get('return', []):
             if item == 'stdout':
                 ret['stdout'] = stdout.decode('utf-8')
@@ -187,7 +197,7 @@ class CmdSession:
                 'job_id': self.job_id,
                 'cmd': cmd})
             result = await self.execute(cmd, **kwargs)
-        return result
+        return True, result
 
 
 async def process_web_cmd(cmd, json_data, files):
@@ -196,5 +206,7 @@ async def process_web_cmd(cmd, json_data, files):
     for file in files:
         cmd_args[file['filename']] = file['file']
     cmd_config = cmd_manager.get_cmd_config(cmd)
+    if not cmd_config:
+        return False, {'code': 1, 'message': f'Command {cmd} not found.'}
     cmd_session = CmdSession(cmd_config)
     return await cmd_session.run(**cmd_args)

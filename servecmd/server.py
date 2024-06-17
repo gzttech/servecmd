@@ -14,7 +14,9 @@ async def test_run(req: Request):
     cmd = processed['json'].pop('cmd', None)
     if not cmd:
         return {'code': 1, 'message': 'No cmd provided.'}
-    ret = await process_web_cmd(cmd, processed['json'], processed['files'])
+    status, ret = await process_web_cmd(cmd, processed['json'], processed['files'])
+    if not status:
+        return ret
     return {'code': 0, 'message': 'ok', 'data': ret}
 
 
