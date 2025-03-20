@@ -99,6 +99,9 @@ class CmdSession:
                             value = value.encode('utf-8')
                         fd.write(value)
                     ret[param_name] = filename
+                elif param_config.get('type') == 'list':
+                    param_list = ' '.join(value or [])
+                    ret[param_name] = param_list
                 else:
                     ret[param_name] = value
             self._params_cache[param_name] = ret[param_name]
@@ -127,7 +130,8 @@ class CmdSession:
         cmd_env['cwd'] = self.get_job_path()
         cmd_env['cwd_abs'] = os.path.abspath(self.get_job_path())
         for item in self.cmd_config['command']:
-            args_list.append(self.process_input_item(item, cmd_env, **kwargs))
+            processed_item = self.process_input_item(item, cmd_env, **kwargs)
+            args_list.append(processed_item)
         result_args_list = []
         for i in args_list:
             result_args_list.extend(shlex.split(i))
