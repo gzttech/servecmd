@@ -2,7 +2,8 @@ import json
 import logging
 import datetime
 from string import Template
-from fastapi import UploadFile
+from starlette.datastructures import UploadFile
+
 
 logger = logging.getLogger('servecmd')
 
@@ -39,13 +40,18 @@ async def process_request(req):
         json_data = await req.json()
     elif content_type.startswith('multipart/form-data'):
         async with req.form() as form:
-            for key, value in form.items():
-                if value.content_type == 'application/json':
-                    json_data = json.loads(value.file.read())
-                else:
-                    files.append({
-                        'filename': value.filename,
-                        'size': value.size,
-                        'file': value.file.read()
-                    })
+            for key in form:
+                values = form.getlist(key)
+                if not values:
+                    continue
+                if values[0].content_type == 'application/json':
+                    json_data = json.loads(values[0].file.read())
+                elif isinstance(values[0], UploadFile):
+                        for value in values:
+                            files.append({
+                                'key': key,
+                                'filename': value.filename,
+                                'size': value.size,
+                                'file': value.file.read()
+                            })
     return {'json': json_data, 'files': files}

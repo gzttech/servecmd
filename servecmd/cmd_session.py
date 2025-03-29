@@ -93,11 +93,6 @@ class CmdSession:
                     raise ValueError(f"Missing required param: {param_name}")
                 if param_config.get('type') == 'file':
                     filename = param_config.get('filename') or param_name
-                    with open(self.get_job_file_path(filename), 'wb') as fd:
-                        value = value or b''
-                        if isinstance(value, str):
-                            value = value.encode('utf-8')
-                        fd.write(value)
                     ret[param_name] = filename
                 elif param_config.get('type') == 'list':
                     param_list = ' '.join(value or [])
@@ -110,6 +105,15 @@ class CmdSession:
     async def preprocess_params(self, **kwargs):
         for param_name in self.cmd_config.get('params', {}):
             __ = self.get_params(param_name, **kwargs)
+
+    async def preprocess_files(self, files):
+        for file in files:
+            filename = file['filename'] or file['key']
+            with open(self.get_job_file_path(filename), 'wb') as fd:
+                content = file.get('file')
+                if isinstance(content, str):
+                    content = content.encode('utf-8')
+                fd.write(content)
 
     def process_input_item(self, item, cmd_env, **kwargs):
         if item is None:
@@ -193,8 +197,9 @@ class CmdSession:
         ret['job_id'] = self.job_id
         return ret
 
-    async def run(self, **kwargs):
+    async def run(self, files, **kwargs):
         async with self.job_context():
+            await self.preprocess_files(files)
             await self.preprocess_params(**kwargs)
             cmd = await self.prepare_cmd(**kwargs)
             util.json_log_info({
@@ -213,4 +218,4 @@ async def process_web_cmd(cmd, json_data, files):
     if not cmd_config:
         return False, {'code': 1, 'message': f'Command {cmd} not found.'}
     cmd_session = CmdSession(cmd_config)
-    return await cmd_session.run(**cmd_args)
+    return await cmd_session.run(files, **cmd_args)
