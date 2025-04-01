@@ -137,10 +137,13 @@ class CmdSession:
         for item in self.cmd_config['command']:
             processed_item = self.process_input_item(item, cmd_env, **kwargs)
             args_list.append(processed_item)
-        result_args_list = []
-        for i in args_list:
-            result_args_list.extend(shlex.split(i))
-        return shlex.join(result_args_list)
+        if self.cmd_config.get('lexer', 'shlex'):
+            result_args_list = []
+            for i in args_list:
+                result_args_list.extend(shlex.split(i))
+            return shlex.join(result_args_list)
+        else:
+            return ' '.join(args_list)
 
     async def execute(self, cmd, **kwargs):
         ret = {}
