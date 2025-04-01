@@ -11,6 +11,9 @@ def parse_config(args):
     parser.add_argument("--no-clean", action="store_true", help="Do not clean the job directory.")
     parser.add_argument('-v', '--verbose', action='count', default=0,
                         help='Vebosity (can be used multiple times)')
+    parser.add_argument('--version',
+                        action='store_true',
+                        help='Show version information and quit')
     sub_parsers = parser.add_subparsers(dest='command', help="Sub-commands")
     serve_parser = sub_parsers.add_parser("serve", help="Serve via HTTP.")
     serve_parser.add_argument("--host", default="127.0.0.1")
@@ -20,6 +23,9 @@ def parse_config(args):
 
 def main():
     args = parse_config(sys.argv[1:])
+    if args.version:
+        from . import __version__
+        print(f'servecmd {__version__}')
     conf.CONFIG['no_clean'] = args.no_clean
     conf.CONFIG['verbosity'] = args.verbose
     if args.config:
