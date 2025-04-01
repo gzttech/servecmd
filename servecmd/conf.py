@@ -5,6 +5,8 @@ import yaml
 
 CONFIG = {
     'default_workdir': f'{os.getcwd()}/servecmd_default',
+    'no_clean': False,
+    'verbosity': 0,
 }
 
 CONFIG_SEARCH_LOCATIONS = [
@@ -31,4 +33,10 @@ def load(config_file=None):
         except FileNotFoundError:
             pass
     # setup logging
-    logging.basicConfig(level=CONFIG.get('log_level', 'INFO'))
+    logger = logging.getLogger('servecmd')
+    if CONFIG['verbosity'] == 1:
+        logger.setLevel(logging.INFO)
+    if CONFIG['verbosity'] > 1:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(logging.WARNING)

@@ -54,7 +54,8 @@ class CmdSession:
             self.ensure_job_path()
             yield
         finally:
-            self.clean_job_path()
+            if not conf.CONFIG.get('no_clean', False):
+                self.clean_job_path()
             self.job_id = None
 
     def get_job_path(self):
@@ -153,6 +154,7 @@ class CmdSession:
                                                         )
         (stdout, stderr) = await process.communicate()
         end_time = time.time()
+        util.logger.debug(stdout)
         util.json_log_info({
             'job_id': self.job_id,
             'returncode': process.returncode,
