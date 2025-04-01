@@ -34,6 +34,7 @@ def load(config_file=None):
             pass
     # setup logging
     logger = logging.getLogger('servecmd')
+    logger.addHandler(logging.StreamHandler())
     if CONFIG['verbosity'] == 1:
         logger.setLevel(logging.INFO)
     if CONFIG['verbosity'] > 1:
