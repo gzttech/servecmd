@@ -157,7 +157,7 @@ class CmdSession:
                                                         )
         (stdout, stderr) = await process.communicate()
         end_time = time.time()
-        util.logger.debug(stdout)
+        util.logger.debug(stdout.decode('utf-8', 'ignore'))
         util.json_log_info({
             'job_id': self.job_id,
             'returncode': process.returncode,
