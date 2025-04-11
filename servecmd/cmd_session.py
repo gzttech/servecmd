@@ -150,12 +150,10 @@ class CmdSession:
         proc_kwargs = {}
         proc_kwargs['cwd'] = self.get_job_path()
         begin_time = time.time()
-        process = await asyncio.create_subprocess_shell(cmd,
-                                                        stdout=asyncio.subprocess.PIPE,
-                                                        stderr=asyncio.subprocess.PIPE,
-                                                        **proc_kwargs
-                                                        )
-        (stdout, stderr) = await process.communicate()
+        if self.cmd_config['runner'] == 'subprocess':
+            (stdout, stderr, process) = await util.subprocess_call(cmd, **proc_kwargs)
+        else:
+            (stdout, stderr, process) = await util.asyncio_call(cmd, **proc_kwargs)
         end_time = time.time()
         util.logger.debug(stdout.decode('utf-8', 'ignore'))
         util.json_log_info({

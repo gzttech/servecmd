@@ -1,6 +1,8 @@
 import json
 import logging
 import datetime
+import asyncio
+import subprocess
 from string import Template
 from starlette.datastructures import UploadFile
 
@@ -55,3 +57,28 @@ async def process_request(req):
                                 'file': value.file.read()
                             })
     return {'json': json_data, 'files': files}
+
+
+async def asyncio_call(cmd, **proc_kwargs):
+    process = await asyncio.create_subprocess_shell(
+        cmd,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        **proc_kwargs
+     )
+    (stdout, stderr) = await process.communicate()
+    return (stdout, stderr, process)
+
+
+async def subprocess_call(cmd, **proc_kwargs):
+    def _run():
+        process = subprocess.Popen(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            **proc_kwargs
+        )
+        (stdout, stderr) = process.communicate()
+        return (stdout, stderr, process)
+    return await asyncio.to_thread(_run)
