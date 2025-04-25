@@ -49,14 +49,26 @@ class CmdSession:
 
     @contextlib.asynccontextmanager
     async def job_context(self):
+        has_exception = False
         self.job_id = str(uuid.uuid4())
         try:
             self.ensure_job_path()
             yield
+        except Exception as e:
+            has_exception = True
+            raise e
         finally:
-            if not conf.CONFIG.get('no_clean', False):
-                self.clean_job_path()
+            match (has_exception, conf.CONFIG.get('no_clean', False)):
+                case (__, False):
+                    self.clean_job_path()
+                case (__, True):
+                    pass
+                case (True, 'error'):
+                    self.clean_job_path()
+                case _:
+                    self.clean_job_path()
             self.job_id = None
+
 
     def get_job_path(self):
         cwd = self.cmd_config.get("cwd", "") or conf.CONFIG.get('default_workdir')

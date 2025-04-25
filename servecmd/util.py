@@ -59,7 +59,11 @@ async def process_request(req):
     return {'json': json_data, 'files': files}
 
 
-async def asyncio_call(cmd, **proc_kwargs):
+async def asyncio_call(cmd: str, **proc_kwargs):
+    '''
+    Use asyncio.create_subprocess_shell() to run a command,
+    suitable for io-bound tasks.
+    '''
     process = await asyncio.create_subprocess_shell(
         cmd,
         stdout=asyncio.subprocess.PIPE,
@@ -70,7 +74,11 @@ async def asyncio_call(cmd, **proc_kwargs):
     return (stdout, stderr, process)
 
 
-async def subprocess_call(cmd, **proc_kwargs):
+async def subprocess_call(cmd: str, **proc_kwargs):
+    '''
+    Use subprocess.Popen() to run a command,
+    suitable for cpu-bound tasks.
+    '''
     def _run():
         process = subprocess.Popen(
             cmd,
