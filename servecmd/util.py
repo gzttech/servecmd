@@ -34,6 +34,12 @@ if not hasattr(Template, 'get_identifiers'):
     Template.get_identifiers = get_identifiers
 
 
+def update_model_instance(inst, **kwargs):
+    for key, value in kwargs.items():
+        setattr(inst, key, value)
+    return inst
+
+
 async def process_request(req):
     files = []
     json_data = {}

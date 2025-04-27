@@ -8,7 +8,7 @@ def load_cmd_configs():
     '''
     Load all the command configurations.
     '''
-    for config_dir in conf.CONFIG.get('cmd_config_dirs', []):
+    for config_dir in conf.CONFIG.cmd_config_dirs:
         CMD_CONFIG_STORE.update(cmd_session.load_all_configs(config_dir))
 
 

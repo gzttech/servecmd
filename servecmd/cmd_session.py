@@ -12,9 +12,10 @@ import yaml
 from . import conf
 from . import cmd_manager
 from . import util
+from .models import CmdConfig
 
 
-def load_config(filename, type=None):
+def load_cmd_config_from_file(filename, type=None):
     if type is None:
         type = filename.split('.')[-1]
     with open(filename) as fd:
@@ -22,14 +23,18 @@ def load_config(filename, type=None):
             return json.load(fd)
         elif type == 'yaml' or type == 'yml':
             return yaml.safe_load(fd)
+        else:
+            raise ValueError(f'Unsupported config file type: {type}')
 
 
 def load_all_configs(directory):
     configs = {}
     for filename in os.listdir(directory):
         if filename.endswith('.json') or filename.endswith('.yaml') or filename.endswith('.yml'):
-            config = load_config(f'{directory.rstrip("/")}/{filename}')
-            configs[config["name"]] = config
+            config = CmdConfig(
+                **load_cmd_config_from_file(f'{directory.rstrip("/")}/{filename}')
+            )
+            configs[config.name] = config
     return configs
 
 
@@ -42,7 +47,7 @@ class CmdSession:
     '''
     A cmd executing session.
     '''
-    def __init__(self, cmd_config):
+    def __init__(self, cmd_config: CmdConfig):
         self.cmd_config = cmd_config
         self.job_id = None
         self._params_cache = {}
@@ -58,7 +63,7 @@ class CmdSession:
             has_exception = True
             raise e
         finally:
-            match (has_exception, conf.CONFIG.get('no_clean', False)):
+            match (has_exception, conf.CONFIG.no_clean):
                 case (__, False):
                     self.clean_job_path()
                 case (__, True):
@@ -71,7 +76,7 @@ class CmdSession:
 
 
     def get_job_path(self):
-        cwd = self.cmd_config.get("cwd", "") or conf.CONFIG.get('default_workdir')
+        cwd = self.cmd_config.cwd or conf.CONFIG.default_workdir
         return f'{cwd.rstrip("/")}/{self.job_id}'
     
     def get_job_file_path(self, filename):
@@ -87,7 +92,7 @@ class CmdSession:
 
     def get_params(self, *param_name_list, **kwargs):
         ret = {}
-        params = self.cmd_config.get('params') or {}
+        params = self.cmd_config.params or {}
         for param_name in param_name_list:
             if param_name in self._params_cache:
                 ret[param_name] = self._params_cache[param_name]
@@ -116,7 +121,7 @@ class CmdSession:
         return ret
     
     async def preprocess_params(self, **kwargs):
-        for param_name in self.cmd_config.get('params', {}):
+        for param_name in (self.cmd_config.params or {}):
             __ = self.get_params(param_name, **kwargs)
 
     async def preprocess_files(self, files):
@@ -146,10 +151,10 @@ class CmdSession:
         cmd_env = {}
         cmd_env['cwd'] = self.get_job_path()
         cmd_env['cwd_abs'] = os.path.abspath(self.get_job_path())
-        for item in self.cmd_config['command']:
+        for item in self.cmd_config.command:
             processed_item = self.process_input_item(item, cmd_env, **kwargs)
             args_list.append(processed_item)
-        if self.cmd_config.get('lexer', 'shlex'):
+        if self.cmd_config.lexer:
             result_args_list = []
             for i in args_list:
                 result_args_list.extend(shlex.split(i))
@@ -162,7 +167,7 @@ class CmdSession:
         proc_kwargs = {}
         proc_kwargs['cwd'] = self.get_job_path()
         begin_time = time.time()
-        if self.cmd_config['runner'] == 'subprocess':
+        if self.cmd_config.runner == 'subprocess':
             (stdout, stderr, process) = await util.subprocess_call(cmd, **proc_kwargs)
         else:
             (stdout, stderr, process) = await util.asyncio_call(cmd, **proc_kwargs)
@@ -174,7 +179,7 @@ class CmdSession:
             'used_time': end_time - begin_time,
             'stderr': stderr.decode('utf-8'),
         })
-        for item in self.cmd_config.get('return', []):
+        for item in self.cmd_config.return_:
             if item == 'stdout':
                 ret['stdout'] = stdout.decode('utf-8')
             elif item == 'stderr':
