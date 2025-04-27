@@ -15,6 +15,6 @@ class CmdConfig(BaseModel):
     command: list[Union[str, dict]]
     cwd: str = ''
     params: dict = Field(default_factory=dict)
-    runner: str = 'subprocess'
-    lexer: str = 'shlex'
+    runner: str | None = 'subprocess'
+    lexer: str | None = 'shlex'
     return_: list = Field(default_factory=list, alias="return")
