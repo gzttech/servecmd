@@ -26,10 +26,10 @@ def main():
     if args.version:
         from . import __version__
         print(f'servecmd {__version__}')
-    if args.config:
-        conf.load(args.config)
     conf.CONFIG.no_clean = args.no_clean
     conf.CONFIG.verbosity = args.verbose
+    if args.config:
+        conf.load(args.config)
     if args.command == "serve":
         cmd_manager.load_cmd_configs()
         uvicorn.run("servecmd.server:app", host=args.host, port=args.port)

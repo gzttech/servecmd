@@ -26,8 +26,6 @@ def setup_logging():
         logger.setLevel(logging.WARNING)
 
 
-import os
-
 def load(config_file=None):
     locations = []
     if config_file:
