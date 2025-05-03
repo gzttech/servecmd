@@ -54,16 +54,21 @@ class CmdSession:
 
     @contextlib.asynccontextmanager
     async def job_context(self):
-        has_exception = False
+        job_context_dict = {
+            'returncode': None,
+            'has_exception': False,
+        }
         self.job_id = str(uuid.uuid4())
         try:
             self.ensure_job_path()
-            yield
+            yield job_context_dict
         except Exception as e:
-            has_exception = True
+            job_context_dict['has_exception'] = True
             raise e
         finally:
-            match (has_exception, conf.CONFIG.no_clean):
+            error_return_code = True if job_context_dict['returncode'] else False
+            is_abnormal = error_return_code or job_context_dict['has_exception']
+            match (is_abnormal, conf.CONFIG.no_clean):
                 case (__, False):
                     self.clean_job_path()
                 case (__, True):
@@ -73,7 +78,6 @@ class CmdSession:
                 case _:
                     self.clean_job_path()
             self.job_id = None
-
 
     def get_job_path(self):
         cwd = self.cmd_config.cwd or conf.CONFIG.default_workdir
@@ -184,6 +188,8 @@ class CmdSession:
                 ret['stdout'] = stdout.decode('utf-8')
             elif item == 'stderr':
                 ret['stderr'] = stderr.decode('utf-8')
+            elif item == 'returncode':
+                ret['returncode'] = process.returncode
             elif isinstance(item, dict):
                 arg_name = item['name']
                 arg_type = item['type']
@@ -218,7 +224,7 @@ class CmdSession:
         return ret
 
     async def run(self, files, **kwargs):
-        async with self.job_context():
+        async with self.job_context() as job_context_dict:
             await self.preprocess_files(files)
             await self.preprocess_params(**kwargs)
             cmd = await self.prepare_cmd(**kwargs)
@@ -226,6 +232,7 @@ class CmdSession:
                 'job_id': self.job_id,
                 'cmd': cmd})
             result = await self.execute(cmd, **kwargs)
+            job_context_dict['returncode'] = result['returncode']
         return True, result
 
 
