@@ -166,7 +166,7 @@ class CmdSession:
         else:
             return ' '.join(args_list)
 
-    async def execute(self, cmd, **kwargs):
+    async def execute(self, cmd, job_context_dict, **kwargs):
         ret = {}
         proc_kwargs = {}
         proc_kwargs['cwd'] = self.get_job_path()
@@ -176,7 +176,9 @@ class CmdSession:
         else:
             (stdout, stderr, process) = await util.asyncio_call(cmd, **proc_kwargs)
         end_time = time.time()
-        util.logger.debug(stdout.decode('utf-8', 'ignore'))
+        job_context_dict['returncode'] = process.returncode
+        job_context_dict['stdout'] = stdout.decode('utf-8', 'ignore')
+        job_context_dict['stderr'] = stderr.decode('utf-8', 'ignore')
         util.json_log_info({
             'job_id': self.job_id,
             'returncode': process.returncode,
@@ -231,8 +233,11 @@ class CmdSession:
             util.json_log_info({
                 'job_id': self.job_id,
                 'cmd': cmd})
-            result = await self.execute(cmd, **kwargs)
-            job_context_dict['returncode'] = result['returncode']
+            result = await self.execute(cmd, job_context_dict, **kwargs)
+            if job_context_dict['returncode'] != 0:
+                util.logger.info(job_context_dict['stdout'])
+            else:
+                util.logger.debug(job_context_dict['stdout'])
         return True, result
 
 
