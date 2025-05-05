@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "servecmd"
-version = "0.0.14"
+version = "0.0.15"
 readme = 'README.md'
 description = "A simple tool to serve command line tools as web services."
 authors = ["Gongziting Tech Ltd."]
