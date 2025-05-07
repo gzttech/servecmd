@@ -74,7 +74,7 @@ class CmdSession:
                 case (__, True):
                     pass
                 case (True, 'error'):
-                    self.clean_job_path()
+                    pass
                 case _:
                     self.clean_job_path()
             self.job_id = None
