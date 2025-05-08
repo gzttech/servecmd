@@ -20,10 +20,11 @@ def setup_logging():
     logger.addHandler(logging.StreamHandler())
     if CONFIG.verbosity == 1:
         logger.setLevel(logging.INFO)
-    if CONFIG.verbosity > 1:
+    elif CONFIG.verbosity > 1:
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.WARNING)
+    return logger
 
 
 def load(config_file=None):
@@ -51,4 +52,5 @@ def load(config_file=None):
                                 update_model_instance(CONFIG, **yaml.safe_load(f))
         except FileNotFoundError:
             pass
-    setup_logging()
+    logger = setup_logging()
+    logger.info(f'Loaded config: {CONFIG}')
