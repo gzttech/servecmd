@@ -35,6 +35,7 @@ def load_all_configs(directory):
                 **load_cmd_config_from_file(f'{directory.rstrip("/")}/{filename}')
             )
             configs[config.name] = config
+            util.logger.info(f'Loaded cmd [{config.name}] from {filename}.')
     return configs
 
 
